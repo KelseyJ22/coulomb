@@ -129,7 +129,7 @@ class Particles():
 		ymax = self.find_max(y_pos)
 
 
-		plotter.plot(x_pos[0], y_pos[0], 'r-')
+		plotter.plot(x_pos[0], y_pos[0], 'r-', x_pos[1], y_pos[1], 'b-', x_pos[2], y_pos[2], 'g-')
 		#plotter.axis(xmin, xmax, ymin, ymax)
 		plotter.xlabel('X Positions Over Time')
 		plotter.ylabel('Y Positions Over Time')
