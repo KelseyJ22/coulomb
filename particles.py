@@ -17,7 +17,6 @@ class Particles():
 
 	# calculate distance between two particles using pythagorean theorem
 	def distance(self, loc1, loc2):
-		print loc1
 		x_dist = loc1[0] - loc2[0]
 		y_dist = loc1[1] - loc2[1]
 		
@@ -37,8 +36,6 @@ class Particles():
 
 	# calculates the total force on a particle in either the x or y coordinate
 	def combine(self, f2, f3, curr_loc, loc2, loc3, coord):
-		print loc2
-		print loc3
 		curr = curr_loc[coord]
 		p1 = loc2[coord]
 		p2 = loc3[coord]
@@ -63,6 +60,7 @@ class Particles():
 		else:
 			return math.sqrt((math.pow(vi, 2) + (2*a*t))) # kinematics
 
+
 	# determine acceleration from given information
 	# (simulate based on constant-acceleration even though that's not what really happens)
 	def calc_acceleration(self, index, coord):
@@ -78,10 +76,12 @@ class Particles():
 		a = f_tot/curr['mass']
 		return a
 
+
 	# calculate x position after some time period
 	def calc_pos_final(self, t, index, coord):
 		p = self.particles[index]
 		a = self.calc_acceleration(index, coord)
+
 		# x = x + vt + 1/2at^2
 		if coord == 0:
 			final = p['loc'][coord] + p['vx'] + (1/2)*a*(math.pow(t, 2))
@@ -132,4 +132,4 @@ class Particles():
 
 
 particles = Particles()
-particles.simulate(.01)
+particles.simulate(10)
