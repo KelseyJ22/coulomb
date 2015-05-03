@@ -11,9 +11,8 @@ class Particles():
 
 	def __init__(self):
 		self.K = 8.99 * math.pow(10, 9)
-		self.particles = [{'loc':[.1,.1], 'vx':0, 'vy':0, 'mass':1, 'charge':.01}, {'loc':[0,0], 'vx':0, 'vy':0, 'mass':1, 'charge':.01}, {'loc':[.1,0], 'vx':0, 'vy':0, 'mass':1, 'charge':.01}]
-		self.forces = [self.coulomb(self.particles[0], self.particles[1]), self.coulomb(self.particles[1], self.particles[2]), self.coulomb(self.particles[0], self.particles[2])]
-
+		self.particles = [{'loc':[0,.1], 'vx':0, 'vy':0, 'mass':1, 'charge':.01}, {'loc':[0,0], 'vx':0, 'vy':0, 'mass':1, 'charge':.01}, {'loc':[.1,0], 'vx':0, 'vy':0, 'mass':1, 'charge':.01}]
+		self.forces = [self.coulomb(0, 1), self.coulomb(0, 2), self.coulomb(1, 0), self.coulomb(1, 2), self.coulomb(2, 0), self.coulomb(2, 1)]
 
 	# calculate distance between two particles using pythagorean theorem
 	def distance(self, loc1, loc2):
@@ -25,62 +24,56 @@ class Particles():
 
 	# define interaction of any two particles: Kq1q2/r^2
 	def coulomb(self, a, b):
-		numerator = self.K * a['charge'] * b['charge']
-		denominator = math.pow(self.distance(a['loc'], b['loc']), 2)
-		force = (numerator/denominator)
+		p1 = self.particles[a]
+		p2 = self.particles[b]
+		numerator = self.K * p1['charge'] * p2['charge']
+		denominator = math.pow(self.distance(p1['loc'], p2['loc']), 2)
+		f = (numerator/denominator)
+		dist = self.distance(p1['loc'], p2['loc'])
+		fx = f * ((p1['loc'][0] - p2['loc'][0])/dist) # f1cos(theta) --> opp/hyp
+		fy = f * ((p1['loc'][1] - p2['loc'][1])/dist) # f2cos(theta) --> opp/hyp
 
-		if ((a['charge'] > 0.0) & (b['charge'] > 0.0)) | ((a['charge'] < 0.0) & (b['charge'] < 0.0)): # attractive or repulsive forces
-			force *= -1 # negative indicates repulsive forces
+		if ((p1['charge'] > 0.0) & (p2['charge'] > 0.0)) | ((p1['charge'] < 0.0) & (p2['charge'] < 0.0)): # repulsive forces
+			if p1['loc'][0] < p2['loc'][0]:
+				fx *= -1 # left particle pushed left
+			if p1['loc'][1] < p2['loc'][1]:
+				fy *= -1 # lower particle pushed down
+		else: # attractive forces
+			if p1['loc'][0] > p2['loc'][0]:
+				fx *= -1 # right particle pulled left
+			if p1['loc'][1] > p2['loc'][1]:
+				fy *= -1 # lower particle pulled up
+
+		force = [fx, fy]
 		return force
-
-
-	# calculates the total force on a particle in either the x or y coordinate
-	def combine(self, f1, f2, curr_loc, loc1, loc2, coord):
-		curr = curr_loc[coord]
-		p1 = loc1[coord]
-		p2 = loc2[coord]
-		r1 = self.distance(curr_loc, loc1)
-		r2 = self.distance(curr_loc, loc2)
-
-		f1 = f1 * ((curr - p1)/r1) # f1cos(theta) --> opp/hyp
-		f2 = f2 * ((curr - p2)/r2) # f2cos(theta) --> opp/hyp
-
-		f_tot = f1 + f2
-		
-		# THE PROBLEM IS:
-		# negative in force indicates repulsive, but for Fba, a[x] > b[x] it should be POSITIVE
-		# while for Fab, a[x] > b[x] it should be negative (pushing the particles apart)
-		# NEED TO FIGURE THIS OUT!!!
-
-		return f_tot # pythagorean theorem
 
 
 	# calculate vfinal from given information -- x or y direction
 	def calc_vfinal(self, vi, a, t):	
 		vf = (math.pow(vi, 2) + (2*a*t))
-		if vf < 0: # guard against negative velocity -- can be negative, but can't calculate this way
-			vf *= -1
-			vf = math.sqrt(vf)
-			vf *= -1 # needs to end up negative (repulsive)
-			return vf # ewww this style is gross but whatever
-		else:
-			return math.sqrt(vf) # kinematics
+		return math.sqrt(vf) # kinematics
+
+
+	# combine two forces acting on a particle in x or y direction
+	def combine(self, f1, f2, coord):
+		return f1[coord] + f2[coord]
 
 
 	# determine acceleration in x or y direction
 	# (simulate based on constant-acceleration even though that's not what really happens)
 	def calc_acceleration(self, index, coord):
 		curr = self.particles[index]
-		f1 = self.forces[index]
+		i = index*2 # eg index 0 in particles array needs indices 0 and 1 in forces array
+		f1 = self.forces[i]
+		f2 = self.forces[i + 1]
 		if (index + 1) < len(self.particles):
 			loc1 = self.particles[index + 1]['loc']
 		else:
 			loc1 = self.particles[0]['loc'] # roll over to initial force
-		f2 = self.forces[index - 1]
 		loc2 = self.particles[index - 1]['loc'] # python automatically wraps around
 
 		# total force in x or y direction
-		f_tot = self.combine(f1, f2, curr['loc'], loc1, loc2, coord)
+		f_tot = self.combine(f1, f2, coord)
 
 		a = f_tot/curr['mass']
 		return a
@@ -137,4 +130,4 @@ class Particles():
 
 
 particles = Particles()
-particles.simulate(10)
+particles.simulate(.1)
