@@ -12,7 +12,8 @@ class Particles():
 	def __init__(self):
 		self.K = 8.99 * math.pow(10, 9)
 		self.particles = [{'loc':[0,.1], 'vx':0, 'vy':0, 'mass':1, 'charge':.01}, {'loc':[0,0], 'vx':0, 'vy':0, 'mass':1, 'charge':.01}, {'loc':[.1,0], 'vx':0, 'vy':0, 'mass':1, 'charge':.01}]
-		self.forces = [self.coulomb(0, 1), self.coulomb(0, 2), self.coulomb(1, 0), self.coulomb(1, 2), self.coulomb(2, 0), self.coulomb(2, 1)]
+		self.forces = self.calc_forces()
+
 
 	# calculate distance between two particles using pythagorean theorem
 	def distance(self, loc1, loc2):
@@ -20,6 +21,10 @@ class Particles():
 		y_dist = loc1[1] - loc2[1]
 		
 		return math.sqrt(((math.pow(x_dist, 2)) + (math.pow(y_dist, 2))))
+
+
+	def calc_forces(self):
+		return [self.coulomb(0, 1), self.coulomb(0, 2), self.coulomb(1, 0), self.coulomb(1, 2), self.coulomb(2, 0), self.coulomb(2, 1)]
 
 
 	# define interaction of any two particles: Kq1q2/r^2
@@ -109,15 +114,17 @@ class Particles():
 	# increments through the time interval and calculates the position of the particles after that time
 	def generate_pos(self, t, coord):
 		wrapper = []
-		count = 0
-		for particle in self.particles: # iterate through indexes of particles
+		# SOMETHING IS WRONG WITH THE ITERATION/PLOTTING
+		for increment in range(1, 100): # incremental progression through the time period
 			locations = []
-			locations.append(particle['loc'][coord])
-			for increment in range(1, 100): # incremental progression through the time period
+			count = 0
+			for particle in self.particles: # update all particles for each time increment
+				locations.append(particle['loc'][coord])
 				position = self.calc_pos_final(t/increment, count, coord)
 				locations.append(position)
+				count += 1 # indicates index of particle in self.particles array
+			self.forces = self.calc_forces()
 			wrapper.append(locations)
-			count += 1 # indicates index of particle in self.particles array
 		return wrapper
 
 
@@ -125,6 +132,12 @@ class Particles():
 	def simulate(self, t):
 		x_pos = self.generate_pos(t, 0) # 0 indicates X in X,Y pair
 		y_pos = self.generate_pos(t, 1) # 1 indicates Y in X,Y pair
+		for elem in x_pos:
+			print elem
+			print '\n'
+		for elem in y_pos:
+			print elem
+			print '\n'
 
 		self.display(x_pos, y_pos)
 
