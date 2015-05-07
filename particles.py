@@ -11,7 +11,7 @@ class Particles():
 
 	def __init__(self):
 		self.K = 8.99 * math.pow(10, 9)
-		self.particles = [{'loc':[1,1], 'vx':0, 'vy':0, 'mass':1, 'charge':1}, {'loc':[0,0], 'vx':0, 'vy':0, 'mass':1, 'charge':1}, {'loc':[.1,0], 'vx':0, 'vy':0, 'mass':1, 'charge':1}]
+		self.particles = [{'loc':[10000,10000], 'vx':0, 'vy':0, 'mass':1, 'charge':-100}, {'loc':[0,0], 'vx':0, 'vy':0, 'mass':1, 'charge':100}, {'loc':[.1,0], 'vx':0, 'vy':0, 'mass':1, 'charge':0}]
 		self.forces = []
 
 
@@ -28,7 +28,6 @@ class Particles():
 
 
 	def calc_forces(self):
-		print '\n'
 		return [self.coulomb(0, 1), self.coulomb(0, 2), self.coulomb(1, 0), self.coulomb(1, 2), self.coulomb(2, 0), self.coulomb(2, 1)]
 
 
@@ -95,8 +94,6 @@ class Particles():
 	def calc_pos_final(self, t, index, coord):
 		p = self.particles[index]
 		a = self.calc_acceleration(index, coord)
-		print '\nparticle: ' + str(index)
-		print 'a' + str(coord) + ': ' + str(a)
 
 		# xf = xi + vt + 1/2at^2
 		if coord == 0:
@@ -108,7 +105,6 @@ class Particles():
 			p['vy'] = self.calc_vfinal(p['vy'], a, t) # update for next iteration
 
 		p['loc'][coord] = final # update loc for next iteration
-		print 'position: ' + str(final)
 		return final
 
 
@@ -118,13 +114,14 @@ class Particles():
 		x_pos = positions[0]
 		y_pos = positions[1]
 
+		# print in case graph is insufficient/unclear
 		print '\np1: '
 		print x_pos[0]
 		print y_pos[0]
-		print 'p2: '
+		print '\np2: '
 		print x_pos[1]
 		print y_pos[1]
-		print 'p3: '
+		print '\np3: '
 		print x_pos[2]
 		print y_pos[2]
 		plotter.plot(x_pos[0], y_pos[0], 'r-', x_pos[1], y_pos[1], 'b-', x_pos[2], y_pos[2], 'g-')
@@ -140,20 +137,43 @@ class Particles():
 		for increment in reversed(range(1,100)): # incremental progression through the time period
 			count = 0
 			self.forces = self.calc_forces() # recalculate for each increment through the time range
-			print self.forces
 			for particle in self.particles: # update all particles for each time increment
+				
 				xposition = self.calc_pos_final(t/increment, count, 0)
 				xlocations[count].append(xposition)
 				yposition = self.calc_pos_final(t/increment, count, 1)
 				ylocations[count].append(yposition)
-				count += 1 # indicates index of particle in self.particles array
+				
+				count += 1 # indicate index of particle in self.particles array
 		return [xlocations, ylocations]
 
 
+	# basic checking of input
+	def positive_mass(self):
+		for particle in self.particles:
+			if particle['mass'] < 0:
+				return False
+		return True
+
+
+	# ensure no particles start out at same location (impossible in real life)
+	def no_overlap(self):
+		# TODO fill this out
+
+	# sanity check input
+	def passes_check(self):
+		if self.no_overlap & self.positive_mass:
+			return True
+		else:
+			return False
+
 	# wrapper function for particle interactions
 	def simulate(self, t):
-		positions = self.generate_positions(t)
-		self.display(positions)
+		if self.passes_check():
+			positions = self.generate_positions(t)
+			self.display(positions)
+		else:
+			print 'Some kind of configuration error occurred'
 
 
 particles = Particles()
