@@ -11,8 +11,8 @@ class Particles():
 
 	def __init__(self):
 		self.K = 8.99 * math.pow(10, 9)
-		self.particles = [{'loc':[0,.1], 'vx':0, 'vy':0, 'mass':1, 'charge':.01}, {'loc':[0,0], 'vx':0, 'vy':0, 'mass':1, 'charge':.01}, {'loc':[.1,0], 'vx':0, 'vy':0, 'mass':1, 'charge':.01}]
-		self.forces = self.calc_forces()
+		self.particles = [{'loc':[1,1], 'vx':0, 'vy':0, 'mass':1, 'charge':1}, {'loc':[0,0], 'vx':0, 'vy':0, 'mass':1, 'charge':1}, {'loc':[.1,0], 'vx':0, 'vy':0, 'mass':1, 'charge':1}]
+		self.forces = []
 
 
 	# calculate distance between two particles using pythagorean theorem
@@ -20,10 +20,15 @@ class Particles():
 		x_dist = loc1[0] - loc2[0]
 		y_dist = loc1[1] - loc2[1]
 		
-		return math.sqrt(((math.pow(x_dist, 2)) + (math.pow(y_dist, 2))))
+		dist = math.sqrt(((math.pow(x_dist, 2)) + (math.pow(y_dist, 2))))
+		if dist == 0:
+			return 0.0000001 # avoid division by zero
+		else:
+			return dist
 
 
 	def calc_forces(self):
+		print '\n'
 		return [self.coulomb(0, 1), self.coulomb(0, 2), self.coulomb(1, 0), self.coulomb(1, 2), self.coulomb(2, 0), self.coulomb(2, 1)]
 
 
@@ -34,9 +39,9 @@ class Particles():
 		numerator = self.K * p1['charge'] * p2['charge']
 		denominator = math.pow(self.distance(p1['loc'], p2['loc']), 2)
 		f = (numerator/denominator)
-		dist = self.distance(p1['loc'], p2['loc'])
-		fx = f * ((p1['loc'][0] - p2['loc'][0])/dist) # f1cos(theta) --> opp/hyp
-		fy = f * ((p1['loc'][1] - p2['loc'][1])/dist) # f2cos(theta) --> opp/hyp
+		dist = math.fabs(self.distance(p1['loc'], p2['loc']))
+		fx = math.fabs(f * ((p1['loc'][0] - p2['loc'][0])/dist)) # f1cos(theta) --> opp/hyp
+		fy = math.fabs(f * ((p1['loc'][1] - p2['loc'][1])/dist)) # f2cos(theta) --> opp/hyp
 
 		if ((p1['charge'] > 0.0) & (p2['charge'] > 0.0)) | ((p1['charge'] < 0.0) & (p2['charge'] < 0.0)): # repulsive forces
 			if p1['loc'][0] < p2['loc'][0]:
@@ -49,14 +54,16 @@ class Particles():
 			if p1['loc'][1] > p2['loc'][1]:
 				fy *= -1 # lower particle pulled up
 
-		force = [fx, fy]
-		return force
+		return [fx, fy]
 
 
 	# calculate vfinal from given information -- x or y direction
 	def calc_vfinal(self, vi, a, t):	
 		vf = (math.pow(vi, 2) + (2*a*t))
-		return math.sqrt(vf) # kinematics
+		v = math.sqrt(math.fabs(vf)) # kinematics
+		if vf > 0:
+			v += -1
+		return v
 
 
 	# combine two forces acting on a particle in x or y direction
@@ -88,23 +95,38 @@ class Particles():
 	def calc_pos_final(self, t, index, coord):
 		p = self.particles[index]
 		a = self.calc_acceleration(index, coord)
+		print '\nparticle: ' + str(index)
+		print 'a' + str(coord) + ': ' + str(a)
 
 		# xf = xi + vt + 1/2at^2
 		if coord == 0:
-			final = p['loc'][coord] + p['vx'] + (1/2)*a*(math.pow(t, 2))
+			final = p['loc'][coord] + p['vx'] + ((a*(math.pow(t, 2)))/2)
 			p['vx'] = self.calc_vfinal(p['vx'], a, t) # update for next iteration
 
 		else:
-			final = p['loc'][coord] + p['vy'] + (1/2)*a*(math.pow(t, 2))
+			final = p['loc'][coord] + p['vy'] + ((a*(math.pow(t, 2)))/2)
 			p['vy'] = self.calc_vfinal(p['vy'], a, t) # update for next iteration
 
 		p['loc'][coord] = final # update loc for next iteration
+		print 'position: ' + str(final)
 		return final
 
 
 # -----------------------------------------------------
 	# takes arrays of x and y positions and graphs them on the same axes
-	def display(self, x_pos, y_pos):
+	def display(self, positions):
+		x_pos = positions[0]
+		y_pos = positions[1]
+
+		print '\np1: '
+		print x_pos[0]
+		print y_pos[0]
+		print 'p2: '
+		print x_pos[1]
+		print y_pos[1]
+		print 'p3: '
+		print x_pos[2]
+		print y_pos[2]
 		plotter.plot(x_pos[0], y_pos[0], 'r-', x_pos[1], y_pos[1], 'b-', x_pos[2], y_pos[2], 'g-')
 		plotter.xlabel('X Positions Over Time')
 		plotter.ylabel('Y Positions Over Time')
@@ -112,35 +134,27 @@ class Particles():
 
 
 	# increments through the time interval and calculates the position of the particles after that time
-	def generate_pos(self, t, coord):
-		wrapper = []
-		# SOMETHING IS WRONG WITH THE ITERATION/PLOTTING
-		for increment in range(1, 100): # incremental progression through the time period
-			locations = []
+	def generate_positions(self, t):
+		xlocations = {0:[], 1:[], 2:[]}
+		ylocations = {0:[], 1:[], 2:[]}
+		for increment in reversed(range(1,100)): # incremental progression through the time period
 			count = 0
+			self.forces = self.calc_forces() # recalculate for each increment through the time range
+			print self.forces
 			for particle in self.particles: # update all particles for each time increment
-				locations.append(particle['loc'][coord])
-				position = self.calc_pos_final(t/increment, count, coord)
-				locations.append(position)
+				xposition = self.calc_pos_final(t/increment, count, 0)
+				xlocations[count].append(xposition)
+				yposition = self.calc_pos_final(t/increment, count, 1)
+				ylocations[count].append(yposition)
 				count += 1 # indicates index of particle in self.particles array
-			self.forces = self.calc_forces()
-			wrapper.append(locations)
-		return wrapper
+		return [xlocations, ylocations]
 
 
 	# wrapper function for particle interactions
 	def simulate(self, t):
-		x_pos = self.generate_pos(t, 0) # 0 indicates X in X,Y pair
-		y_pos = self.generate_pos(t, 1) # 1 indicates Y in X,Y pair
-		for elem in x_pos:
-			print elem
-			print '\n'
-		for elem in y_pos:
-			print elem
-			print '\n'
-
-		self.display(x_pos, y_pos)
+		positions = self.generate_positions(t)
+		self.display(positions)
 
 
 particles = Particles()
-particles.simulate(.1)
+particles.simulate(10)
