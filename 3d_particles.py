@@ -9,7 +9,7 @@ class Particles():
 
 	def __init__(self):
 		self.K = 8.99 * math.pow(10, 9)
-		self.particles = [{'loc':[1,1], 'vx':0, 'vy':0, 'mass':1, 'charge':1}, {'loc':[0,0], 'vx':0, 'vy':0, 'mass':1, 'charge':1}, {'loc':[.1,0], 'vx':0, 'vy':0, 'mass':1, 'charge':1}]
+		self.particles = [{'loc':[1,1, 1], 'vx':0, 'vy':0, 'vz':0, 'mass':1, 'charge':1}, {'loc':[0,0, 0], 'vx':0, 'vy':0, 'vz':0, 'mass':1, 'charge':1}, {'loc':[.1,0, 0], 'vx':0, 'vy':0, 'vz':0, 'mass':1, 'charge':1}]
 		self.forces = []
 
 
@@ -17,8 +17,9 @@ class Particles():
 	def distance(self, loc1, loc2):
 		x_dist = loc1[0] - loc2[0]
 		y_dist = loc1[1] - loc2[1]
+		z_dist = loc1[2] - loc2[2]
 		
-		dist = math.sqrt(((math.pow(x_dist, 2)) + (math.pow(y_dist, 2))))
+		dist = math.sqrt(((math.pow(x_dist, 2)) + (math.pow(y_dist, 2)) + math.pow(z_dist, 2)))
 		if dist == 0:
 			return 0.000000001 # avoid division by zero
 		else:
@@ -39,18 +40,23 @@ class Particles():
 		dist = math.fabs(self.distance(p1['loc'], p2['loc']))
 		fx = math.fabs(f * ((p1['loc'][0] - p2['loc'][0])/dist)) # f1cos(theta) --> opp/hyp
 		fy = math.fabs(f * ((p1['loc'][1] - p2['loc'][1])/dist)) # f2cos(theta) --> opp/hyp
+		fz = math.fabs(f * ((p1['loc'][2] - p2['loc'][2])/dist)) # f2cos(theta) --> opp/hyp
 
 		if ((p1['charge'] > 0.0) & (p2['charge'] > 0.0)) | ((p1['charge'] < 0.0) & (p2['charge'] < 0.0)): # repulsive forces
 			if p1['loc'][0] < p2['loc'][0]:
 				fx *= -1 # left particle pushed left
 			if p1['loc'][1] < p2['loc'][1]:
 				fy *= -1 # lower particle pushed down
+			if p1['loc'][2] < p2['loc'][2]:
+				fz += -1
 		else: # attractive forces
 			if p1['loc'][0] > p2['loc'][0]:
 				fx *= -1 # right particle pulled left
 			if p1['loc'][1] > p2['loc'][1]:
 				fy *= -1 # lower particle pulled up
-		return [fx, fy]
+			if p1['loc'][2] > p2['loc'][2]:
+				fz += -1
+		return [fx, fy, fz]
 
 
 	# calculate vfinal from given information -- x or y direction
@@ -101,46 +107,47 @@ class Particles():
 			final = p['loc'][coord] + p['vy'] + ((a*(math.pow(t, 2)))/2)
 			p['vy'] = self.calc_vfinal(p['vy'], a, t) # update for next iteration
 
+		else:
+			final = p['loc'][coord] + p['vz'] + ((a*(math.pow(t, 2)))/2)
+			p['vz'] = self.calc_vfinal(p['vz'], a, t) # update for next iteration
+
 		p['loc'][coord] = final # update loc for next iteration
 		return final
 
 
 # -----------------------------------------------------
-	def print_particles(self, x_pos, y_pos):
+	def print_particles(self, x_pos, y_pos, z_pos):
 		print '\np1: '
 		print x_pos[0]
 		print y_pos[0]
+		print z_pos[0]
 
 		print '\np2: '
 		print x_pos[1]
 		print y_pos[1]
+		print z_pos[1]
 
 		print '\np3: '
 		print x_pos[2]
 		print y_pos[2]
-
-
-	def plot(self, x_pos, y_pos):
-		plotter.plot(x_pos[0], y_pos[0], 'r-', x_pos[1], y_pos[1], 'b-', x_pos[2], y_pos[2], 'g-')
-		plotter.xlabel('X Positions Over Time')
-		plotter.ylabel('Y Positions Over Time')
-		plotter.show()
+		print z_pos[2]
 
 
 	# takes arrays of x and y positions and graphs them on the same axes
 	def display(self, positions):
 		x = positions[0]
 		y = positions[1]
+		z = positions[2]
 
 		# print in case graph is insufficient/unclear
-		self.print_particles(x, y)
-		self.plot(x, y)
+		self.print_particles(x, y, z)
 
 
 	# increments through the time interval and calculates the position of the particles after that time
 	def generate_positions(self, t):
 		xlocations = {0:[], 1:[], 2:[]}
 		ylocations = {0:[], 1:[], 2:[]}
+		zlocations = {0:[], 1:[], 2:[]}
 
 		for increment in reversed(xrange(1,100)): # incremental progression through the time period
 			count = 0
@@ -151,9 +158,11 @@ class Particles():
 				xlocations[count].append(xposition)
 				yposition = self.calc_pos_final(t/increment, count, 1)
 				ylocations[count].append(yposition)
+				zposition = self.calc_pos_final(t/increment, count, 2)
+				zlocations[count].append(zposition)
 				
 				count += 1 # indicate index of particle in self.particles array
-		return [xlocations, ylocations]
+		return [xlocations, ylocations, zlocations]
 
 
 	# basic checking of input
@@ -171,7 +180,7 @@ class Particles():
 			for j in xrange(0, 3):
 				p2 = self.particles[j]
 				if p1 != p2: # the particle obviously overlaps with itself
-					if (p1['loc'][0] == p2['loc'][0]) & (p1['loc'][1] == p2['loc'][1]):
+					if (p1['loc'][0] == p2['loc'][0]) & (p1['loc'][1] == p2['loc'][1]) & (p1['loc'][2] == p2['loc'][2]):
 						return False
 		return True
 
