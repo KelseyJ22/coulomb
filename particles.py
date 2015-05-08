@@ -3,15 +3,13 @@ import matplotlib.pyplot as plotter
 import math
 
 # Inputs to the program are the initial positions, velocities, masses and charges of the particles.
-
 # Output is a graphical representation of the trajectories for a given time interval.
-
 
 class Particles():
 
 	def __init__(self):
 		self.K = 8.99 * math.pow(10, 9)
-		self.particles = [{'loc':[10000,10000], 'vx':0, 'vy':0, 'mass':1, 'charge':-100}, {'loc':[0,0], 'vx':0, 'vy':0, 'mass':1, 'charge':100}, {'loc':[.1,0], 'vx':0, 'vy':0, 'mass':1, 'charge':0}]
+		self.particles = [{'loc':[1,1], 'vx':0, 'vy':0, 'mass':1, 'charge':1}, {'loc':[0,0], 'vx':0, 'vy':0, 'mass':1, 'charge':1}, {'loc':[.1,0], 'vx':0, 'vy':0, 'mass':1, 'charge':1}]
 		self.forces = []
 
 
@@ -134,7 +132,7 @@ class Particles():
 	def generate_positions(self, t):
 		xlocations = {0:[], 1:[], 2:[]}
 		ylocations = {0:[], 1:[], 2:[]}
-		for increment in reversed(range(1,100)): # incremental progression through the time period
+		for increment in reversed(xrange(1,100)): # incremental progression through the time period
 			count = 0
 			self.forces = self.calc_forces() # recalculate for each increment through the time range
 			for particle in self.particles: # update all particles for each time increment
@@ -152,17 +150,26 @@ class Particles():
 	def positive_mass(self):
 		for particle in self.particles:
 			if particle['mass'] < 0:
+				print 'what the fuck'
 				return False
 		return True
 
 
 	# ensure no particles start out at same location (impossible in real life)
 	def no_overlap(self):
-		# TODO fill this out
+		for i in xrange(0,3):
+			p1 = self.particles[i]
+			for j in xrange(0, 3):
+				p2 = self.particles[j]
+				if p1 != p2: # the particle obviously overlaps with itself
+					if (p1['loc'][0] == p2['loc'][0]) & (p1['loc'][1] == p2['loc'][1]):
+						return False
+		return True
 
 	# sanity check input
 	def passes_check(self):
-		if self.no_overlap & self.positive_mass:
+		if self.no_overlap() & self.positive_mass():
+			print 'all good'
 			return True
 		else:
 			return False
